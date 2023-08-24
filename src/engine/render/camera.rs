@@ -275,6 +275,6 @@ mod test {
     fn test_coord() {
         assert_eq!(UP, vector![0.0, 0.0, 1.0]);
         let camera = Camera::new(point![0.0, 0.0, 0.0]);
-        assert_eq!(camera.calc_target(0.0, 0.0), point![1.0, 0.0, 0.0]);
+        assert_eq!(camera.calc_target(0.0, 0.0), vector![1.0, 0.0, 0.0]);
     }
 }
