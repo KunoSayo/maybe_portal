@@ -1,0 +1,70 @@
+[package]
+name = "mp_core"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace]
+members = ["maybe_portal"]
+
+[lib]
+name = "mp_core"
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+
+# graphics
+gltf = "1.2.0"
+winit = "0.28"
+wgpu = "0.16.3"
+wgpu_glyph = "0.20"
+egui = "0.22.0"
+egui-wgpu = "0.22.0"
+egui-winit = "0.22.0"
+profiling = "*"
+image = "0.24.4"
+
+# async / network
+
+tokio = { version = "1.27.0", features = ["full"] }
+kcp = "0.5.1"
+tokio_kcp = "0.9.4"
+futures = { version = "0.3.24", features = ["executor", "thread-pool"] }
+
+# audio
+cpal = "0.15.2"
+kira = "0.7.0"
+
+# functions
+mlua = { version = "0.8.3", features = ["lua54", "vendored"] }
+toml_edit = "0.19.8"
+specs = "0.18.0"
+rapier3d = { version = "0.17.2", features = ["simd-stable", "rayon"] }
+
+# log
+log = "0.4.17"
+
+
+#util
+once_cell = "1.17.1"
+anyhow = "1.0"
+bytemuck = "1.13"
+rayon = "1.7"
+rand = "0.8"
+num = "0.4"
+nalgebra = { version = "0.32", features = ["bytemuck"] }
+dashmap = "5.5"
+crossbeam = "0.8.2"
+
+
+[profile.dev.package.rapier3d]
+opt-level = 3
+
+[profile.release]
+codegen-units = 1
+
+
+[target.'cfg(target_os = "android")'.dependencies]
+ndk = { version = "^0.7.0", features = [] }
+ndk-glue = { version = "^0.7.0", features = ["logger"] }

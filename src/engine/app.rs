@@ -1,0 +1,99 @@
+use std::sync::Arc;
+
+use egui::{Context, Style};
+use egui_winit::State;
+use log::{info, warn};
+use specs::{World, WorldExt};
+use winit::window::Window;
+
+use crate::engine::{AudioData, BakedInputs, MainRendererData, ResourceManager, WgpuData};
+use crate::engine::window::EventLoopTargetType;
+
+pub struct AppInstance {
+    pub window: Window,
+    pub gpu: Option<WgpuData>,
+    pub render: Option<MainRendererData>,
+    pub res: Arc<ResourceManager>,
+    pub last_render_time: std::time::Instant,
+    pub egui_ctx: Context,
+    pub egui_state: State,
+
+    pub inputs: BakedInputs,
+    pub lua: mlua::Lua,
+    pub world: World,
+
+    pub audio: Option<AudioData>,
+}
+
+impl AppInstance {
+    fn new_with_gpu(window: Window, event_loop: &EventLoopTargetType, gpu: Option<WgpuData>) -> anyhow::Result<Self> {
+        let res = ResourceManager::new()?;
+        let render = if let Some(gpu) = &gpu {
+            Some(MainRendererData::new(gpu, &res))
+        } else {
+            None
+        };
+        let rua = mlua::Lua::new();
+        info!("Got the lua");
+        let egui_ctx = Context::default();
+        info!("Got the egui context");
+        let mut style = Style::default();
+        style.clone_from(&egui_ctx.style());
+        for (_, s) in &mut style.text_styles {
+            s.size *= 1.25;
+        }
+        egui_ctx.set_style(style);
+        if gpu.is_some() {
+            egui_ctx.set_pixels_per_point(window.scale_factor() as f32);
+            info!("Set the egui context scale factor");
+        }
+        let al = match std::panic::catch_unwind(|| {
+            match AudioData::new() {
+                Ok(al) => Some(al),
+                Err(e) => {
+                    warn!("Load audio failed for {:?}", e);
+                    None
+                }
+            }
+        }) {
+            Ok(al) => al,
+            Err(e) => {
+                warn!("Get audio even panicked for {:?} with type id {:?}", e, e.type_id());
+                None
+            }
+        };
+
+        info!("Creating thread pool");
+
+
+        info!("Almost got all window instance field");
+        Ok(Self {
+            window,
+            gpu,
+            render,
+            res: res.into(),
+            last_render_time: std::time::Instant::now(),
+            egui_ctx,
+            egui_state: State::new(event_loop),
+            inputs: Default::default(),
+            lua: rua,
+            world: World::new(),
+            audio: al,
+        })
+    }
+
+    /// Create the app instance with the same gpu data
+    #[inline]
+    pub fn create_from_gpu(window: Window, event_loop: &EventLoopTargetType, gpu: &WgpuData) -> anyhow::Result<Self> {
+        let gpu = WgpuData::create_from_exists(&window, gpu).ok();
+        Self::new_with_gpu(window, event_loop, gpu)
+    }
+
+    #[inline]
+    pub fn new(window: Window, event_loop: &EventLoopTargetType) -> anyhow::Result<Self> {
+        let gpu = WgpuData::new(&window).ok();
+        Self::new_with_gpu(window, event_loop, gpu)
+    }
+}
+
+
