@@ -56,7 +56,7 @@ fn plane_vs_full_tex(input: PlaneVertexIn, @builtin(vertex_index) vidx: u32) -> 
     }
     out.pos = camera.view_proj * vec4<f32>(input.position, 1.0);
     out.normal = input.normal;
-
+    out.pos.z -= 1e-6;
     return out;
 }
 
@@ -79,7 +79,6 @@ fn plane_fs(in: PlaneVertexOut) -> @location(0) vec4<f32> {
 fn plane_pos_tex_fs(in: PlaneVertexOut) -> @location(0) vec4<f32> {
     var pos = in.pos;
 
-    let dim = textureDimensions(t_diffuse);
     let object_color: vec4<f32> = textureLoad(t_diffuse, vec2<u32>(u32(pos.x), u32(pos.y)), 0);
 
 //    let object_color: vec4<f32> = textureSample(t_diffuse, s_diffuse, in.tex_coords);

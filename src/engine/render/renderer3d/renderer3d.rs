@@ -223,7 +223,7 @@ impl PlaneRenderer {
             depth_stencil: Some(DepthStencilState {
                 format: TextureFormat::Depth32Float,
                 depth_write_enabled: true,
-                depth_compare: CompareFunction::Less,
+                depth_compare: CompareFunction::LessEqual,
                 stencil: Default::default(),
                 bias: Default::default(),
             }),

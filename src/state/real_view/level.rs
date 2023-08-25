@@ -2,7 +2,8 @@ use std::array::from_ref;
 use std::collections::HashMap;
 
 use anyhow::anyhow;
-use log::{debug, trace};
+use egui::epaint::ahash::HashSet;
+use log::{debug, info, trace};
 use nalgebra::{Matrix4, Point3, vector, Vector2, Vector3};
 use num::Zero;
 use rapier3d::dynamics::LockedAxes;
@@ -473,9 +474,9 @@ impl MagicLevel {
 
         self.me.calc_vel(&mut self.p, ddr, s.app.inputs.cur_frame_input.pressing.contains(&VirtualKeyCode::LShift));
         self.p.step(dt);
-
+        let mut coled = HashSet::default();
         while let Ok(event) = self.p.col_events.try_recv() {
-            trace!(target:"level", "Got col event {:?}", event);
+            trace!(target:"level::col", "Got col event {:?}", event);
             if event.stopped() {
                 continue;
             }
@@ -485,6 +486,9 @@ impl MagicLevel {
                 event.collider1()
             };
             if let Some((world, idx)) = self.portals_map.get(&portal_handle) {
+                if !coled.insert((*world, *idx)) {
+                    continue;
+                }
                 let portal = &self.levels[*world].portals[*idx];
                 let before = camera.eye;
                 let camera_view = Coord::from_camera_portal(camera, portal);
@@ -499,6 +503,7 @@ impl MagicLevel {
                     c.half_extents.x *= portal.scale;
                     c.half_extents.y *= portal.scale;
                 }
+                info!(target: "level", "From world {} to world {}", self.me_world, connecting.world);
                 self.me_world = connecting.world;
                 debug!(target:"level", "{:?} with {:?} => {:?}", before, camera_view, camera.eye);
             }
@@ -596,7 +601,8 @@ impl MagicLevel {
 
                 pr.bind(&mut rp);
                 rp.set_bind_group(1, &self.portal_views[rec_dep + 1].color_bind, &[]);
-                rp.set_pipeline(&pr.screen_tex_no_cull_rp);
+                rp.set_bind_group(2, &cpv.pd.bindgroup, &[]);
+                rp.set_pipeline(&portal_renderer.render_portal_view_rp);
                 pr.render_static(&mut rp, gpu, from_ref(&this_portal.portal_render));
             }
         }

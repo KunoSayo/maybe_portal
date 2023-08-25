@@ -8,6 +8,7 @@ pub struct PortalRenderer {
     pub depth_bind_layout: BindGroupLayout,
     /// Render the scenes in the portal view
     pub portal_view_rp: RenderPipeline,
+    pub render_portal_view_rp: RenderPipeline,
 }
 
 impl PortalRenderer {
@@ -55,7 +56,7 @@ impl PortalRenderer {
             depth_stencil: Some(DepthStencilState {
                 format: TextureFormat::Depth32Float,
                 depth_write_enabled: true,
-                depth_compare: CompareFunction::Less,
+                depth_compare: CompareFunction::LessEqual,
                 stencil: Default::default(),
                 bias: Default::default(),
             }),
@@ -71,9 +72,42 @@ impl PortalRenderer {
             }),
             multiview: None,
         });
+        let render_portal_view_rp = device.create_render_pipeline(&RenderPipelineDescriptor {
+            label: None,
+            layout: Some(&rp_layout),
+            vertex: VertexState {
+                module: &shader_module,
+                entry_point: "plane_vs",
+                buffers: &[PlaneVertex::desc()],
+            },
+            primitive: PrimitiveState {
+                topology: PrimitiveTopology::TriangleStrip,
+                cull_mode: None,
+                ..Default::default()
+            },
+            depth_stencil: Some(DepthStencilState {
+                format: TextureFormat::Depth32Float,
+                depth_write_enabled: true,
+                depth_compare: CompareFunction::LessEqual,
+                stencil: Default::default(),
+                bias: Default::default(),
+            }),
+            multisample: Default::default(),
+            fragment: Some(FragmentState {
+                module: &shader_module,
+                entry_point: "render_portal_view_fs",
+                targets: &[Some(ColorTargetState {
+                    format: gpu.surface_cfg.format,
+                    blend: Some(BlendState::REPLACE),
+                    write_mask: ColorWrites::ALL,
+                })],
+            }),
+            multiview: None,
+        });
         Self {
             depth_bind_layout,
             portal_view_rp,
+            render_portal_view_rp,
         }
     }
 }

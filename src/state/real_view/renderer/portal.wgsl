@@ -58,7 +58,7 @@ fn portal_fs(in: PlaneVertexOut) -> @location(0) vec4<f32> {
     let portal_dep = textureLoad(t_depth, vec2<i32>(i32(pos.x), i32(pos.y)), 0);
 
     // make sure the things behind the portal
-    if (pos.z <= portal_dep) {
+    if (pos.z < portal_dep) {
         discard;
     }
 
@@ -69,4 +69,20 @@ fn portal_fs(in: PlaneVertexOut) -> @location(0) vec4<f32> {
     let result = vec4<f32>((ambient_color + diffuse_color) * object_color.rgb, object_color.a);
 
     return result;
+}
+@fragment
+fn render_portal_view_fs(in: PlaneVertexOut) -> @location(0) vec4<f32> {
+    var pos = in.pos;
+
+    let object_color: vec4<f32> = textureLoad(t_diffuse, vec2<u32>(u32(pos.x), u32(pos.y)), 0);
+    let portal_dep = textureLoad(t_depth, vec2<i32>(i32(pos.x), i32(pos.y)), 0);
+
+    // make sure the things behind the portal
+    if (pos.z < portal_dep) {
+        discard;
+    }
+//    let object_color: vec4<f32> = textureSample(t_diffuse, s_diffuse, in.tex_coords);
+
+
+    return object_color;
 }
