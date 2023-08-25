@@ -34,7 +34,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get install pkg-config && sudo apt-get install libasound2-dev
       - name: Build
-        run: cargo build --release --verbose -Z unstable-options --out-dir artifacts --no-default-features
+        run: cargo build --release --bin maybe_portal --package maybe_portal --verbose -Z unstable-options --out-dir artifacts --no-default-features
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
