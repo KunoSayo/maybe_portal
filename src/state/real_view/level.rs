@@ -167,7 +167,7 @@ impl Level {
         // we are in -1 ~ 1
         // but in facts 5
         // so -5 ~ 5
-        add_plane(p, &mut gfs, &vector![0.0, 0.0, Z_OFFSET], 10.0, &Vector2::zeros(), 25.0, &Vector3::z(), &Vector3::x());
+        add_plane(p, &mut gfs, &vector![0.0, 0.0, Z_OFFSET], 20.0, &Vector2::zeros(), 20.0, &Vector3::z(), &Vector3::x());
 
         let mut bfs = pr.create_plane(&gpu.device, Some(&bf.view));
         add_plane(p, &mut bfs, &vector![0.0, 5.0, 5.0 + Z_OFFSET], 5.0, &Vector2::zeros(), 2.5, &Vector3::y(), &Vector3::x());
@@ -546,7 +546,7 @@ impl MagicLevel {
         }
         {
             // then render scenes
-            let mut rp = ce.begin_with_depth(&pv.color.view, LoadOp::Clear(Color::BLACK),
+            let mut rp = ce.begin_with_depth(&pv.color.view, LoadOp::Clear(Color::TRANSPARENT),
                                              &pv.depth.view, LoadOp::Clear(1.0));
             pr.bind(&mut rp);
             rp.set_pipeline(&portal_renderer.portal_view_rp);

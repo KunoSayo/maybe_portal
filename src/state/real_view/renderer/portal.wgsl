@@ -74,7 +74,13 @@ fn portal_fs(in: PlaneVertexOut) -> @location(0) vec4<f32> {
 fn render_portal_view_fs(in: PlaneVertexOut) -> @location(0) vec4<f32> {
     var pos = in.pos;
 
-    let object_color: vec4<f32> = textureLoad(t_diffuse, vec2<u32>(u32(pos.x), u32(pos.y)), 0);
+    var object_color: vec4<f32> = textureLoad(t_diffuse, vec2<u32>(u32(pos.x), u32(pos.y)), 0);
+//    var surround = vec4<f32>(0.0, 0.0, 0.0, 0.0);
+//    surround += textureSample(t_diffuse, s_diffuse, vec2<f32>((pos.x + 1.0) / light.width, (pos.y + 0.0) / light.height));
+//    surround += textureSample(t_diffuse, s_diffuse, vec2<f32>((pos.x - 1.0) / light.width, (pos.y + 0.0) / light.height));
+//    surround += textureSample(t_diffuse, s_diffuse, vec2<f32>((pos.x + 0.0) / light.width, (pos.y + 1.0) / light.height));
+//    surround += textureSample(t_diffuse, s_diffuse, vec2<f32>((pos.x + 0.0) / light.width, (pos.y - 1.0) / light.height));
+//    object_color += (1.0 - object_color.a) * surround;
     let portal_dep = textureLoad(t_depth, vec2<i32>(i32(pos.x), i32(pos.y)), 0);
 
     // make sure the things behind the portal

@@ -79,7 +79,17 @@ fn plane_fs(in: PlaneVertexOut) -> @location(0) vec4<f32> {
 fn plane_pos_tex_fs(in: PlaneVertexOut) -> @location(0) vec4<f32> {
     var pos = in.pos;
 
-    let object_color: vec4<f32> = textureLoad(t_diffuse, vec2<u32>(u32(pos.x), u32(pos.y)), 0);
+    var object_color: vec4<f32> = textureLoad(t_diffuse, vec2<u32>(u32(pos.x), u32(pos.y)), 0);
+
+    var surround = vec4<f32>(0.0, 0.0, 0.0, 0.0);
+
+    for (var i = -1.5; i <= 1.5; i += 1.0) {
+        for (var j = -1.5; j <= 1.5; j += 1.0) {
+            surround += textureSample(t_diffuse, s_diffuse, vec2<f32>((pos.x + i) / light.width, (pos.y + j) / light.height));
+        }
+    }
+    object_color += (1.0 - object_color.a) * surround / surround.a;
+
 
 //    let object_color: vec4<f32> = textureSample(t_diffuse, s_diffuse, in.tex_coords);
 

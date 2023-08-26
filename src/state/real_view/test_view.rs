@@ -5,7 +5,6 @@ use nalgebra::{point, vector};
 use wgpu::{CommandEncoderDescriptor, TextureFormat};
 use winit::dpi::PhysicalPosition;
 use winit::event::{ElementState, MouseButton, VirtualKeyCode, WindowEvent};
-use winit::event::VirtualKeyCode::{Numpad0, Numpad8, Numpad9};
 use winit::window::WindowLevel;
 
 use crate::engine::{GameState, LoopState, StateData, StateEvent, Trans};
@@ -23,7 +22,6 @@ pub struct Test3DState {
     pr: Option<PortalRenderer>,
     size: (u32, u32),
     loc: PhysicalPosition<i32>,
-    speed: f32,
 }
 
 pub struct OverlayView {
@@ -38,7 +36,6 @@ impl Default for Test3DState {
             controller: CameraController::new(),
             size: (0, 0),
             loc: Default::default(),
-            speed: 1.0,
             level: None,
             pr: None,
         }
@@ -76,36 +73,7 @@ impl GameState for Test3DState {
 
     fn update(&mut self, s: &mut StateData) -> (Trans, LoopState) {
         let now = Instant::now();
-        if s.app.inputs.is_pressed(&[Numpad0]) {
-            self.speed = 100.0;
-        }
-        if s.app.inputs.is_pressed(&[Numpad9]) {
-            self.speed = 90.0;
-        }
-        if s.app.inputs.is_pressed(&[Numpad8]) {
-            self.speed = 80.0;
-        }
-        if s.app.inputs.is_pressed(&[VirtualKeyCode::Numpad7]) {
-            self.speed = 70.0;
-        }
-        if s.app.inputs.is_pressed(&[VirtualKeyCode::Numpad6]) {
-            self.speed = 60.0;
-        }
-        if s.app.inputs.is_pressed(&[VirtualKeyCode::Numpad5]) {
-            self.speed = 50.0;
-        }
-        if s.app.inputs.is_pressed(&[VirtualKeyCode::Numpad4]) {
-            self.speed = 40.0;
-        }
-        if s.app.inputs.is_pressed(&[VirtualKeyCode::Numpad3]) {
-            self.speed = 30.0;
-        }
-        if s.app.inputs.is_pressed(&[VirtualKeyCode::Numpad2]) {
-            self.speed = 20.0;
-        }
-        if s.app.inputs.is_pressed(&[VirtualKeyCode::Numpad1]) {
-            self.speed = 1.0;
-        }
+
         let dt = self.last_update.map(|x| now.duration_since(x)).unwrap_or(Duration::from_millis(1)).as_secs_f32().min(0.05);
         let ddr = self.controller.update_direction(&mut self.camera);
         if let Some(level) = self.level.as_mut() {
