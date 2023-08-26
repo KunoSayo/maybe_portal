@@ -1,5 +1,5 @@
 use image::GenericImageView;
-use wgpu::{AddressMode, Device, FilterMode, Queue, Sampler, SamplerDescriptor, Texture, TextureFormat, TextureView};
+use wgpu::{AddressMode, Device, FilterMode, Queue, Sampler, SamplerDescriptor, SurfaceConfiguration, Texture, TextureFormat, TextureView};
 use wgpu::util::DeviceExt;
 
 #[allow(unused)]
@@ -98,6 +98,28 @@ impl TextureWrapper {
                 | wgpu::TextureUsages::TEXTURE_BINDING
                 | wgpu::TextureUsages::COPY_SRC,
             view_formats: &[format],
+        };
+        let texture = device.create_texture(&desc);
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
+        Self { texture, view, info: TextureInfo::new(size.width, size.height) }
+    }
+
+    pub fn new_multisample(device: &Device, cfg: &SurfaceConfiguration, sample_count: u32) -> Self {
+        let size = wgpu::Extent3d {
+            width: cfg.width,
+            height: cfg.height,
+            depth_or_array_layers: 1,
+        };
+        let desc = wgpu::TextureDescriptor {
+            label: None,
+            size,
+            mip_level_count: 1,
+            sample_count,
+            dimension: wgpu::TextureDimension::D2,
+            format: cfg.format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[cfg.format],
         };
         let texture = device.create_texture(&desc);
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());

@@ -59,7 +59,7 @@ impl Test3DState {
         });
 
         let pr = PortalRenderer::new(gpu, plane_renderer);
-        self.level = Some(MagicLevel::new(gpu, plane_renderer, &pr, s.app.res.as_ref()).unwrap());
+        self.level = Some(MagicLevel::level0(gpu, plane_renderer, &pr, s.app.res.as_ref()).unwrap());
         self.pr = Some(pr);
     }
 }
@@ -73,7 +73,18 @@ impl GameState for Test3DState {
 
     fn update(&mut self, s: &mut StateData) -> (Trans, LoopState) {
         let now = Instant::now();
-
+        if let Some(gpu) = s.app.gpu.as_ref() {
+            if let Some(apr) = self.pr.as_mut() {
+                if let Some(mut g3d) = s.app.world.try_fetch_mut::<General3DRenderer>() {
+                    let pr = &mut g3d.plane_renderer;
+                    if s.app.inputs.is_pressed(&[VirtualKeyCode::F1]) {
+                        self.level = Some(MagicLevel::level0(gpu, pr, apr, &s.app.res).unwrap());
+                    } else if s.app.inputs.is_pressed(&[VirtualKeyCode::F2]) {
+                        self.level = Some(MagicLevel::level1(gpu, pr, apr, &s.app.res).unwrap());
+                    }
+                }
+            }
+        }
         let dt = self.last_update.map(|x| now.duration_since(x)).unwrap_or(Duration::from_millis(1)).as_secs_f32().min(0.05);
         let ddr = self.controller.update_direction(&mut self.camera);
         if let Some(level) = self.level.as_mut() {

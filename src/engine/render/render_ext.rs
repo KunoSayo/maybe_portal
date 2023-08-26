@@ -14,6 +14,9 @@ pub trait CommandEncoderExt {
     fn begin_with_depth_stencil<'a>(&'a mut self, color: &'a TextureView, color_load: LoadOp<Color>,
                                     depth_stencil: &'a TextureView, depth_op: Operations<f32>,
                                     stencil_op: Operations<u32>) -> RenderPass<'a>;
+
+    fn begin_multisample<'a>(&'a mut self, multi_sample_view: &'a TextureView, target: &'a TextureView, color_load: LoadOp<Color>,
+                             depth: &'a TextureView, depth_load: LoadOp<f32>) -> RenderPass<'a>;
 }
 
 impl CommandEncoderExt for CommandEncoder {
@@ -49,6 +52,7 @@ impl CommandEncoderExt for CommandEncoder {
             }),
         })
     }
+
     #[inline]
     fn begin_with_depth_stencil<'a>(&'a mut self, color: &'a TextureView, color_load: LoadOp<Color>,
                                     depth_stencil: &'a TextureView, depth_op: Operations<f32>,
@@ -67,6 +71,26 @@ impl CommandEncoderExt for CommandEncoder {
                 view: depth_stencil,
                 depth_ops: Some(depth_op),
                 stencil_ops: Some(stencil_op),
+            }),
+        })
+    }
+    #[inline]
+    fn begin_multisample<'a>(&'a mut self, multi_sample_view: &'a TextureView, target: &'a TextureView, color_load: LoadOp<Color>,
+                             depth: &'a TextureView, depth_load: LoadOp<f32>) -> RenderPass<'a> {
+        self.begin_render_pass(&RenderPassDescriptor {
+            label: None,
+            color_attachments: &[Some(RenderPassColorAttachment {
+                view: multi_sample_view,
+                resolve_target: Some(target),
+                ops: Operations {
+                    load: color_load,
+                    store: true,
+                },
+            })],
+            depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                view: depth,
+                depth_ops: Some(Operations { load: depth_load, store: true }),
+                stencil_ops: None,
             }),
         })
     }
