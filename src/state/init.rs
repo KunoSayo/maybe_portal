@@ -1,11 +1,12 @@
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
 use futures::task::SpawnExt;
 use log::error;
 use wgpu::{Device, Queue};
 
 use crate::engine::{GameState, LoopState, ResourceManager, StateData, StateEvent, Trans, WaitFutureState, WaitResult};
-use crate::engine::global::IO_POOL;
+use crate::engine::global::{INITED, IO_POOL};
 
 pub struct InitState {
     start_state: Option<Box<dyn GameState + Send + 'static>>,
@@ -50,7 +51,9 @@ impl GameState for InitState {
                 let queue = queue;
                 let res = res;
                 let task = async move {
-
+                    if !INITED.load(Ordering::Acquire) {
+                        // Lazy::force(&GLOBAL_DATA);
+                    }
                     load_texture(device, queue, res).await?;
 
                     anyhow::Ok(())
@@ -59,7 +62,10 @@ impl GameState for InitState {
                     error!("Load failed for {:?}", e);
                     WaitResult::Exit
                 } else {
-                    WaitResult::Switch(state)
+                    WaitResult::Function(Box::new(|_| {
+                        // s.app.egui_ctx.set_fonts(GLOBAL_DATA.font.clone());
+                        Trans::Switch(state)
+                    }))
                 }
             }).expect("Spawn init task failed");
 
