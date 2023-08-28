@@ -39,7 +39,7 @@ impl Camera {
             aspect: 16.0 / 9.0,
             fovy: 80.0_f32.to_radians(),
             z_near: 0.0001,
-            z_far: 2000.0,
+            z_far: 1000.0,
         }
     }
 }
@@ -64,7 +64,6 @@ impl CameraUniform {
         self.view_proj = camera.build_view_projection_matrix();
     }
 }
-
 #[allow(unused)]
 pub struct CameraController {
     // Keyboard input

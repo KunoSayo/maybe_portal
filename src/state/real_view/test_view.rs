@@ -81,6 +81,8 @@ impl GameState for Test3DState {
                         self.level = Some(MagicLevel::level0(gpu, pr, apr, &s.app.res).unwrap());
                     } else if s.app.inputs.is_pressed(&[VirtualKeyCode::F2]) {
                         self.level = Some(MagicLevel::level1(gpu, pr, apr, &s.app.res).unwrap());
+                    } else if s.app.inputs.is_pressed(&[VirtualKeyCode::F8]) {
+                        self.level = Some(MagicLevel::level_loop(gpu, pr, apr, &s.app.res).unwrap());
                     }
                 }
             }
