@@ -2,6 +2,7 @@ use std::time::{Duration, Instant};
 
 use egui::{Context, Frame};
 use nalgebra::{point, vector};
+use rand::{Rng, thread_rng};
 use wgpu::{CommandEncoderDescriptor, TextureFormat};
 use winit::dpi::PhysicalPosition;
 use winit::event::{ElementState, MouseButton, VirtualKeyCode, WindowEvent};
@@ -80,9 +81,23 @@ impl GameState for Test3DState {
                     if s.app.inputs.is_pressed(&[VirtualKeyCode::F1]) {
                         self.level = Some(MagicLevel::level0(gpu, pr, apr, &s.app.res).unwrap());
                     } else if s.app.inputs.is_pressed(&[VirtualKeyCode::F2]) {
-                        self.level = Some(MagicLevel::level1(gpu, pr, apr, &s.app.res).unwrap());
+                        self.level = Some(MagicLevel::level_rooms(gpu, 3, pr, apr, &s.app.res).unwrap());
+                    } else if s.app.inputs.is_pressed(&[VirtualKeyCode::F3]) {
+                        self.level = Some(MagicLevel::level_rooms(gpu, 4, pr, apr, &s.app.res).unwrap());
+                    } else if s.app.inputs.is_pressed(&[VirtualKeyCode::F4]) {
+                        self.level = Some(MagicLevel::level_rooms(gpu, 5, pr, apr, &s.app.res).unwrap());
+                    } else if s.app.inputs.is_pressed(&[VirtualKeyCode::F5]) {
+                        self.level = Some(MagicLevel::level_rooms(gpu, 6, pr, apr, &s.app.res).unwrap());
+                    } else if s.app.inputs.is_pressed(&[VirtualKeyCode::F6]) {
+                        self.level = Some(MagicLevel::level_rooms(gpu, 7, pr, apr, &s.app.res).unwrap());
+                    } else if s.app.inputs.is_pressed(&[VirtualKeyCode::F7]) {
+                        self.level = Some(MagicLevel::level_rooms(gpu, 8, pr, apr, &s.app.res).unwrap());
                     } else if s.app.inputs.is_pressed(&[VirtualKeyCode::F8]) {
                         self.level = Some(MagicLevel::level_loop(gpu, pr, apr, &s.app.res).unwrap());
+                    } else if s.app.inputs.is_pressed(&[VirtualKeyCode::F9]) {
+                        let mut rng = thread_rng();
+                        let cnt = rng.gen_range(2..=9);
+                        self.level = Some(MagicLevel::level_rooms(gpu, cnt, pr, apr, &s.app.res).unwrap());
                     }
                 }
             }

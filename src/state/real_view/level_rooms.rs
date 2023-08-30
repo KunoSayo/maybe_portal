@@ -6,6 +6,8 @@ use crate::engine::renderer3d::renderer3d::*;
 
 use nalgebra::*;
 use num::Zero;
+use rand::prelude::SliceRandom;
+use rand::thread_rng;
 use rapier3d::prelude::*;
 use wgpu::util::StagingBelt;
 use crate::engine::physics::obj::Object;
@@ -53,14 +55,25 @@ pub fn get_color_level(color: &str, zo: f32, p: &mut RapierData, gpu: &WgpuData,
 
 
 impl MagicLevel {
-    pub fn level1(gpu: &WgpuData, pr: &mut PlaneRenderer, portal_renderer: &PortalRenderer, res: &ResourceManager) -> anyhow::Result<Self> {
+    pub fn level_rooms(gpu: &WgpuData, room_cnt: usize, pr: &mut PlaneRenderer, portal_renderer: &PortalRenderer, res: &ResourceManager) -> anyhow::Result<Self> {
         let mut levels = vec![];
         let mut p = RapierData::new();
         p.g.set_zero();
 
-        levels.push(get_color_level("gf", 0.0, &mut p, gpu, pr, res)?);
-        levels.push(get_color_level("bf", -20.0, &mut p, gpu, pr, res)?);
-        levels.push(get_color_level("pf", 20.0, &mut p, gpu, pr, res)?);
+        let mut colors = vec!["bf",
+                              "gf",
+                              "pf",
+                              "rf",
+                              "af",
+                              "yf",
+                              "gray_f",
+                              "pink_f",
+                              "black_f"];
+        let mut rng = thread_rng();
+        colors.shuffle(&mut rng);
+        for i in 0..room_cnt {
+            levels.push(get_color_level(&colors[i], 0.0 + i as f32 * 20.0, &mut p, gpu, pr, res)?);
+        }
         let me = RigidBodyBuilder::dynamic()
             .translation(vector![-3.0, 3.0, 1.0])
             .locked_axes(LockedAxes::ROTATION_LOCKED)
@@ -83,48 +96,21 @@ impl MagicLevel {
             portal_views: (0..5).map(|_| PortalView::new(gpu, pr, portal_renderer)).collect(),
         };
 
-        this.add_portal(gpu, pr, PortalPos {
-            world: 0,
-            pos: vector![0.0, -5.0, 1.0],
-            out_normal: Vector3::y(),
-            up: Vector3::z(),
-            width: 10.0,
-        }, PortalPos {
-            world: 1,
-            pos: vector![-5.0, 0.0, 1.0 + -20.0],
-            out_normal: Vector3::x(),
-            up: Vector3::z(),
-            width: 10.0,
-        }, 10.0, 5.0, 10.0, 5.0, 1.0);
-
-        this.add_portal(gpu, pr, PortalPos {
-            world: 1,
-            pos: vector![0.0, -5.0, 1.0 - 20.0],
-            out_normal: Vector3::y(),
-            up: Vector3::z(),
-            width: 10.0,
-        }, PortalPos {
-            world: 2,
-            pos: vector![-5.0, 0.0, 1.0 + 20.0],
-            out_normal: Vector3::x(),
-            up: Vector3::z(),
-            width: 10.0,
-        }, 10.0, 5.0, 10.0, 5.0, 1.0);
-
-        this.add_portal(gpu, pr, PortalPos {
-            world: 2,
-            pos: vector![0.0, -5.0, 1.0 + 20.0],
-            out_normal: Vector3::y(),
-            up: Vector3::z(),
-            width: 10.0,
-        }, PortalPos {
-            world: 0,
-            pos: vector![-5.0, 0.0, 1.0],
-            out_normal: Vector3::x(),
-            up: Vector3::z(),
-            width: 10.0,
-        }, 10.0, 5.0, 10.0, 5.0, 1.0);
-
+        for i in 0..room_cnt {
+            this.add_portal(gpu, pr, PortalPos {
+                world: i,
+                pos: vector![0.0, -5.0, 1.0 + 20.0 * i as f32],
+                out_normal: Vector3::y(),
+                up: Vector3::z(),
+                width: 10.0,
+            }, PortalPos {
+                world: (i + 1) % room_cnt,
+                pos: vector![-5.0, 0.0, 1.0 + 20.0 * ((i as f32 + 1.0) % room_cnt as f32)],
+                out_normal: Vector3::x(),
+                up: Vector3::z(),
+                width: 10.0,
+            }, 10.0, 5.0, 10.0, 5.0, 1.0);
+        }
 
         Ok(this)
     }

@@ -28,7 +28,13 @@ async fn load_texture(a_d: Arc<Device>, a_q: Arc<Queue>, a_r: Arc<ResourceManage
         res.load_texture_async(device, queue, "bf".into(), "texture/floor/blue.png"),
         res.load_texture_async(device, queue, "gf".into(), "texture/floor/green.png"),
         res.load_texture_async(device, queue, "pf".into(), "texture/floor/purple.png"),
-        res.load_texture_async(device, queue, "rf".into(), "texture/floor/red.png")
+        res.load_texture_async(device, queue, "rf".into(), "texture/floor/red.png"),
+        res.load_texture_async(device, queue, "af".into(), "texture/floor/aqua.png"),
+        res.load_texture_async(device, queue, "yf".into(), "texture/floor/yellow.png"),
+        res.load_texture_async(device, queue, "gray_f".into(), "texture/floor/gray.png"),
+        res.load_texture_async(device, queue, "pink_f".into(), "texture/floor/pink.png"),
+        res.load_texture_async(device, queue, "black_f".into(), "texture/floor/black.png"),
+
     ]
         .map(|task| IO_POOL.spawn_with_handle(task))
     {
