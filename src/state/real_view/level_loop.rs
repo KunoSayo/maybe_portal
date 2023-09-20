@@ -15,7 +15,7 @@ use crate::state::real_view::renderer::portal::{PortalRenderer, PortalView};
 // blue
 // purple
 
-fn get_color_level(color: &str, zo: f32, p: &mut RapierData, gpu: &WgpuData, pr: &mut PlaneRenderer, res: &ResourceManager) -> anyhow::Result<Level> {
+pub fn get_color_level(color: &str, zo: f32, p: &mut RapierData, gpu: &WgpuData, pr: &mut PlaneRenderer, res: &ResourceManager) -> anyhow::Result<Level> {
     let gf = res.textures.get(color).ok_or(anyhow!("NO TEXTURE"))?;
     let mut gfs = pr.create_plane(&gpu.device, Some(&gf.view));
 

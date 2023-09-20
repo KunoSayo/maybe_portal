@@ -39,6 +39,15 @@ fn normal_level(p: &mut RapierData, gpu: &WgpuData, pr: &mut PlaneRenderer, res:
     add_plane(p, &mut bfs, &vector![0.0, 6.0, -3.0], 5.0, &Vector2::zeros(), 2.5, &-Vector3::y(), &Vector3::x());
 
 
+    // -x, +y side wall.
+    //         +y
+    //    -x ------  +x
+    //         -y
+    add_plane(p, &mut bfs, &vector![-10.0, 4.0, 0.0], 2.0, &Vector2::zeros(), 1.0, &Vector3::x(), &Vector3::y());
+    add_plane(p, &mut bfs, &vector![-4.0, 10.0, 0.0], 2.0, &Vector2::zeros(), 1.0, &-Vector3::y(), &Vector3::x());
+
+    add_plane(p, &mut bfs, &vector![-10.0, 9.0, 1.0], 1.0, &Vector2::zeros(), 0.5, &Vector3::x(), &Vector3::y());
+    add_plane(p, &mut bfs, &vector![-9.0, 10.0, 1.0], 1.0, &Vector2::zeros(), 0.5, &-Vector3::y(), &Vector3::x());
 
     let mut pfs = pr.create_plane(&gpu.device, Some(&pf.view));
     pfs.objs.push(PlaneObject::new(&vector![-1.0, 0.0, 1.0], 1.0, &Vector2::zeros(), 0.5, &-Vector3::x(), &Vector3::y()));
@@ -248,6 +257,59 @@ fn fat_tunnel(p: &mut RapierData, gpu: &WgpuData, pr: &mut PlaneRenderer, res: &
     })
 }
 
+fn get_color_level_loop(color: &str, zo: f32, p: &mut RapierData, gpu: &WgpuData, pr: &mut PlaneRenderer, res: &ResourceManager) -> anyhow::Result<Level> {
+    let gf = res.textures.get(color).ok_or(anyhow!("NO TEXTURE"))?;
+    let mut gfs = pr.create_plane(&gpu.device, Some(&gf.view));
+
+
+    // we are in the rect [-2, 2]
+    // +x +y wall
+
+    // ---+y----
+    //         |
+    //-x       +x
+    //     -y  |
+
+    // floor and ceil
+    add_plane(p, &mut gfs, &vector![0.0, 0.0, zo], 2.0, &Vector2::zeros(), 1.0, &Vector3::z(), &Vector3::x());
+    add_plane(p, &mut gfs, &vector![0.0, 0.0, 2.0 + zo], 2.0, &Vector2::zeros(), 1.0, &-Vector3::z(), &Vector3::x());
+
+    // wall
+    add_plane(p, &mut gfs, &vector![2.0, 1.0, 1.0 + zo], 1.0, &Vector2::zeros(), 0.5, &-Vector3::x(), &Vector3::y());
+    add_plane(p, &mut gfs, &vector![2.0, -1.0, 1.0 + zo], 1.0, &Vector2::zeros(), 0.5, &-Vector3::x(), &Vector3::y());
+    add_plane(p, &mut gfs, &vector![1.0, 2.0, 1.0 + zo], 1.0, &Vector2::zeros(), 0.5, &-Vector3::y(), &Vector3::x());
+    add_plane(p, &mut gfs, &vector![-1.0, 2.0, 1.0 + zo], 1.0, &Vector2::zeros(), 0.5, &-Vector3::y(), &Vector3::x());
+
+    // portal wall
+    add_plane(p, &mut gfs, &vector![-1.0, -2.0, 1.0 + zo], 1.0, &Vector2::zeros(), 0.5, &Vector3::y(), &Vector3::x());
+    add_plane(p, &mut gfs, &vector![-2.0, -1.0, 1.0 + zo], 1.0, &Vector2::zeros(), 0.5, &Vector3::x(), &Vector3::y());
+
+    let mut planes = vec![];
+    planes.push(gfs.to_static(&gpu.device));
+
+    let mut bundle = gpu.device.create_render_bundle_encoder(&RenderBundleEncoderDescriptor {
+        label: None,
+        color_formats: &[Some(gpu.surface_cfg.format)],
+        depth_stencil: Some(RenderBundleDepthStencil {
+            format: TextureFormat::Depth32Float,
+            depth_read_only: false,
+            stencil_read_only: false,
+        }),
+        sample_count: 1,
+        multiview: None,
+    });
+    bundle.set_pipeline(&pr.normal_rp);
+    pr.bind(&mut bundle);
+    pr.render_static(&mut bundle, gpu, &planes[..]);
+    let bundle = bundle.finish(&RenderBundleDescriptor {
+        label: None,
+    });
+    Ok(Level {
+        portals: vec![],
+        objs: planes,
+        bundle,
+    })
+}
 impl MagicLevel {
     pub fn level0(gpu: &WgpuData, pr: &mut PlaneRenderer, portal_renderer: &PortalRenderer, res: &ResourceManager) -> anyhow::Result<Self> {
         let mut levels = vec![];
@@ -259,6 +321,8 @@ impl MagicLevel {
         levels.push(long_tunnel(&mut p, gpu, pr, res)?);
         levels.push(long_inside(&mut p, gpu, pr, res)?);
         levels.push(short_inside(&mut p, gpu, pr, res)?);
+        levels.push(get_color_level_loop("black_f", 233.0, &mut p, gpu, pr, res)?);
+        levels.push(get_color_level_loop("gray_f", 466.0, &mut p, gpu, pr, res)?);
         let me = RigidBodyBuilder::dynamic()
             .translation(vector![-3.0, 3.0, 1.0])
             .locked_axes(LockedAxes::ROTATION_LOCKED)
@@ -398,6 +462,57 @@ impl MagicLevel {
             width: 5.0,
         }, 1.0, 0.5, 1.0, 0.5, 1.0);
 
+
+        // -x, +y side wall.
+        //         +y
+        //    -x ------  +x
+        //         -y
+
+        // ---+y----
+        //         |
+        //-x       +x
+        //     -y  |
+
+        // world 5 and 6 for tri world
+        this.add_portal(gpu, pr, PortalPos {
+            world: 0,
+            pos: vector![-7.0, 10.0, 1.0],
+            out_normal: -Vector3::y(),
+            up: Vector3::z(),
+            width: 1.0,
+        }, PortalPos {
+            world: 5,
+            pos: vector![1.0, -2.0, 1.0 + 233.0],
+            out_normal: Vector3::y(),
+            up: Vector3::z(),
+            width: 1.0,
+        }, 1.0, 0.5, 1.0, 0.5, 1.0);
+        this.add_portal(gpu, pr, PortalPos {
+            world: 6,
+            pos: vector![1.0, -2.0, 1.0 + 466.0],
+            out_normal: Vector3::y(),
+            up: Vector3::z(),
+            width: 1.0,
+        }, PortalPos {
+            world: 5,
+            pos: vector![-2.0, 1.0, 1.0 + 233.0],
+            out_normal: Vector3::x(),
+            up: Vector3::z(),
+            width: 1.0,
+        }, 1.0, 0.5, 1.0, 0.5, 1.0);
+        this.add_portal(gpu, pr, PortalPos {
+            world: 6,
+            pos: vector![-2.0, 1.0, 1.0 + 466.0],
+            out_normal: Vector3::x(),
+            up: Vector3::z(),
+            width: 1.0,
+        }, PortalPos {
+            world: 0,
+            pos: vector![-10.0, 7.0, 1.0],
+            out_normal: Vector3::x(),
+            up: Vector3::z(),
+            width: 1.0,
+        }, 1.0, 0.5, 1.0, 0.5, 1.0);
         Ok(this)
     }
 }

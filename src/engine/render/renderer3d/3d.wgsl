@@ -56,7 +56,6 @@ fn plane_vs_full_tex(input: PlaneVertexIn, @builtin(vertex_index) vidx: u32) -> 
     }
     out.pos = camera.view_proj * vec4<f32>(input.position, 1.0);
     out.normal = input.normal;
-    out.pos.z -= 1e-6;
     return out;
 }
 
