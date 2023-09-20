@@ -321,8 +321,8 @@ impl MagicLevel {
         levels.push(long_tunnel(&mut p, gpu, pr, res)?);
         levels.push(long_inside(&mut p, gpu, pr, res)?);
         levels.push(short_inside(&mut p, gpu, pr, res)?);
-        levels.push(get_color_level_loop("black_f", 233.0, &mut p, gpu, pr, res)?);
-        levels.push(get_color_level_loop("gray_f", 466.0, &mut p, gpu, pr, res)?);
+        levels.push(get_color_level_loop("black_f", 29.0, &mut p, gpu, pr, res)?);
+        levels.push(get_color_level_loop("gray_f", 57.0, &mut p, gpu, pr, res)?);
         let me = RigidBodyBuilder::dynamic()
             .translation(vector![-3.0, 3.0, 1.0])
             .locked_axes(LockedAxes::ROTATION_LOCKED)
@@ -482,27 +482,27 @@ impl MagicLevel {
             width: 1.0,
         }, PortalPos {
             world: 5,
-            pos: vector![1.0, -2.0, 1.0 + 233.0],
+            pos: vector![1.0, -2.0, 1.0 + 29.0],
             out_normal: Vector3::y(),
             up: Vector3::z(),
             width: 1.0,
         }, 1.0, 0.5, 1.0, 0.5, 1.0);
         this.add_portal(gpu, pr, PortalPos {
             world: 6,
-            pos: vector![1.0, -2.0, 1.0 + 466.0],
+            pos: vector![1.0, -2.0, 1.0 + 57.0],
             out_normal: Vector3::y(),
             up: Vector3::z(),
             width: 1.0,
         }, PortalPos {
             world: 5,
-            pos: vector![-2.0, 1.0, 1.0 + 233.0],
+            pos: vector![-2.0, 1.0, 1.0 + 29.0],
             out_normal: Vector3::x(),
             up: Vector3::z(),
             width: 1.0,
         }, 1.0, 0.5, 1.0, 0.5, 1.0);
         this.add_portal(gpu, pr, PortalPos {
             world: 6,
-            pos: vector![-2.0, 1.0, 1.0 + 466.0],
+            pos: vector![-2.0, 1.0, 1.0 + 57.0],
             out_normal: Vector3::x(),
             up: Vector3::z(),
             width: 1.0,
