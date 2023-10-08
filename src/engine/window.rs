@@ -434,8 +434,8 @@ impl WindowManager {
                 }
                 Event::Suspended => {
                     #[cfg(target_os = "android")]
-                    {
-                        self.window.gpu = None;
+                    for (_, this) in &mut self.windows {
+                        this.get_mut().app.gpu = None;
                     }
                 }
                 Event::Resumed => {

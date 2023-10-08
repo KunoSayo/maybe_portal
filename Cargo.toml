@@ -57,6 +57,8 @@ nalgebra = { version = "0.32", features = ["bytemuck"] }
 dashmap = "5.5"
 crossbeam = "0.8.2"
 
+[features]
+android = ["winit/android-native-activity"]
 
 [profile.dev.package.rapier3d]
 opt-level = 3
@@ -66,5 +68,11 @@ codegen-units = 1
 
 
 [target.'cfg(target_os = "android")'.dependencies]
-ndk = { version = "^0.7.0", features = [] }
-ndk-glue = { version = "^0.7.0", features = ["logger"] }
+ndk = { version = "0.7.0", features = [] }
+android-activity = { version = "0.4" }
+android_logger = "0.11"
+
+
+[package.metadata.android.signing.release]
+path = "./sign/debug.keystore"
+keystore_password = "android"
