@@ -1,5 +1,5 @@
 use winit::dpi::PhysicalSize;
-use winit::event_loop::{EventLoop};
+use winit::event_loop::{EventLoop, EventLoopBuilder};
 use winit::window::WindowBuilder;
 
 use crate::engine::window::{EventLoopMessage, WindowManager};
@@ -8,8 +8,11 @@ use crate::state::real_view::test_view::Test3DState;
 mod engine;
 mod state;
 
+pub fn real_main() {
+    _main(EventLoopBuilder::with_user_event().build());
+}
 
-pub fn real_main(event_loop: EventLoop<EventLoopMessage>) {
+fn _main(event_loop: EventLoop<EventLoopMessage>) {
     println!("[Std Stream] Joined the real main");
     eprintln!("[Err Stream] Joined the real main");
     log::info!("[Log Info] Joined the real main");
@@ -48,5 +51,5 @@ pub fn android_main(app: android_activity::AndroidApp) {
     let el = EventLoopBuilder::with_user_event()
         .with_android_app(app)
         .build();
-    real_main(el);
+    _main(el);
 }
