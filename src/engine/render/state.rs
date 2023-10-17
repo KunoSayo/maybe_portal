@@ -71,7 +71,8 @@ impl WgpuData {
             surface.configure(&device, &surface_cfg);
 
 
-            let uniforms = MainUniformBuffer::new(&device);
+            let mut uniforms = MainUniformBuffer::new(&device);
+            uniforms.uniform_buffer = gpu.uniforms.uniform_buffer.clone();
             let size_scale = [surface_cfg.width as f32 / 1600.0, surface_cfg.height as f32 / 900.0];
             let views = MainRenderViews::new(&device, &surface_cfg);
             Ok(Self {

@@ -1,6 +1,7 @@
 use std::mem::size_of;
 use std::num::NonZeroU64;
 use std::slice::from_ref;
+use std::sync::Arc;
 
 use wgpu::util::{align_to, StagingBelt};
 
@@ -19,7 +20,7 @@ pub struct UniformBufferInstance {
 pub struct MainUniformBuffer {
     pub data: UniformBufferInstance,
     /// Contains camera matrix and 2 more floats as screen size
-    pub uniform_buffer: Buffer,
+    pub uniform_buffer: Arc<Buffer>,
     pub screen_uni_bind_layout: BindGroupLayout,
     pub camera_uni_bind_layout: BindGroupLayout,
 
@@ -47,7 +48,7 @@ impl MainUniformBuffer {
             size: size_of::<[f32; 2]>() as BufferAddress + screen_offset,
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
             mapped_at_creation: false,
-        });
+        }).into();
         let screen_uni_bind_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             label: None,
             entries: &[BindGroupLayoutEntry {

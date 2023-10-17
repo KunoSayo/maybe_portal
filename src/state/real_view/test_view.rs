@@ -1,15 +1,17 @@
 use std::time::{Duration, Instant};
+use anyhow::anyhow;
 
 use egui::{Context, Frame};
 use nalgebra::{point, vector};
 use rand::{Rng, thread_rng};
-use wgpu::{CommandEncoderDescriptor, TextureFormat};
+use wgpu::{BindGroup, BindGroupDescriptor, BindGroupEntry, BindingResource, Color, CommandEncoderDescriptor, Extent3d, ImageCopyTexture, LoadOp, Origin3d, TextureFormat};
 use winit::dpi::PhysicalPosition;
 use winit::event::{ElementState, MouseButton, VirtualKeyCode, WindowEvent};
 use winit::window::WindowLevel;
 
 use crate::engine::{GameState, LoopState, StateData, StateEvent, Trans};
 use crate::engine::render::camera::{Camera, CameraController};
+use crate::engine::render_ext::CommandEncoderExt;
 use crate::engine::renderer3d::renderer3d::{General3DRenderer, LightUniform, PlaneRenderer};
 use crate::engine::window::WindowInstance;
 use crate::state::real_view::level::MagicLevel;
@@ -23,6 +25,7 @@ pub struct Test3DState {
     pr: Option<PortalRenderer>,
     size: (u32, u32),
     loc: PhysicalPosition<i32>,
+    purple: Option<BindGroup>,
 }
 
 pub struct OverlayView {
@@ -39,6 +42,7 @@ impl Default for Test3DState {
             loc: Default::default(),
             level: None,
             pr: None,
+            purple: None
         }
     }
 }
@@ -60,7 +64,17 @@ impl Test3DState {
         });
 
         let pr = PortalRenderer::new(gpu, plane_renderer);
+        let pf = s.app.res.textures.get("pf").ok_or(anyhow!("NO TEXTURE")).unwrap();
+
         self.level = Some(MagicLevel::level0(gpu, plane_renderer, &pr, s.app.res.as_ref()).unwrap());
+        self.purple = Some(gpu.device.create_bind_group(&BindGroupDescriptor {
+            label: None,
+            layout: &plane_renderer.obj_layout,
+            entries: &[BindGroupEntry {
+                binding: 0,
+                resource: BindingResource::TextureView(&pf.view),
+            }],
+        }));
         self.pr = Some(pr);
     }
 }
@@ -116,7 +130,7 @@ impl GameState for Test3DState {
             let _ = s.app.window.set_cursor_position(PhysicalPosition::new(x, y));
         }
         if s.app.inputs.is_pressed(&[VirtualKeyCode::Numpad6]) {
-            let mut window = WindowInstance::new_with_gpu("See Point? NOPE!",
+            let mut window = WindowInstance::new_with_gpu("See portal?",
                                                           |x| x.with_transparent(true)
                                                               .with_window_level(WindowLevel::AlwaysOnTop),
                                                           s.wd.el, s.app.gpu.as_ref().unwrap()).unwrap();
@@ -154,6 +168,23 @@ impl GameState for Test3DState {
                             ui.label(format!("See dir: {:?}", self.camera.target));
                             ui.label(format!("World {}", level.me_world))
                         });
+                    // {
+                    //     let mut encoder = gpu.device.create_command_encoder(&CommandEncoderDescriptor { label: Some("overlay encoder") });
+                    //
+                    //     {
+                    //         let rp = encoder.begin_with_depth(&gpu.views.get_screen().view,
+                    //                                           LoadOp::Clear(Color {
+                    //                                               r: 0.0,
+                    //                                               g: 0.0,
+                    //                                               b: 0.0,
+                    //                                               a: 0.75,
+                    //                                           }),
+                    //                                           &gpu.views.get_depth_view().view,
+                    //                                           LoadOp::Clear(1.0));
+                    //         level.render_portal(self.state.camera.clone(), rp, gpu, &mut g3d.plane_renderer, self.state.purple.as_ref().unwrap());
+                    //     }
+                    //     gpu.queue.submit(std::iter::once(encoder.finish()));
+                    // }
                     level.render(self.camera, &mut encoder, gpu, &mut g3d.plane_renderer, apr);
                 }
             }
@@ -224,8 +255,9 @@ impl GameState for Test3DState {
 }
 
 impl GameState for OverlayView {
-    fn start(&mut self, _: &mut StateData) {
-        todo!("Cool overlay?")
+    fn start(&mut self, s: &mut StateData) {
+        let gpu = s.app.gpu.as_ref().unwrap();
+        s.app.world.insert(General3DRenderer::new(&gpu));
     }
 
 
@@ -241,82 +273,80 @@ impl GameState for OverlayView {
             render.views.check_extra_with_size("main screen depth", &render.device,
                                                (this.size.0, this.size.1), TextureFormat::Depth32Float);
 
-            // if let Some(mut renderer) = s.app.world.try_fetch_mut::<ModelRenderer>() {
-            //     let gpu = s.app.gpu.as_ref().unwrap();
-            //
-            //     let tex = gpu.views.get_extra("main screen").expect("HOW");
-            //     let dep = gpu.views.get_extra("main screen depth").expect("HOW");
-            //     renderer.update_camera(&this.camera);
-            //
-            //
-            //     let mut encoder = gpu.device.create_command_encoder(&CommandEncoderDescriptor { label: Some("overlay encoder") });
-            //
-            //     let _ = encoder.begin_clear_color(&gpu.views.get_screen().view, Color::TRANSPARENT, true);
-            //     gpu.queue.submit(Some(encoder.finish()));
-            //     let mut encoder = gpu.device.create_command_encoder(&CommandEncoderDescriptor { label: Some("overlay encoder") });
-            //
-            //     let mut rp = encoder.begin_with_depth(&tex.view,
-            //                                           LoadOp::Clear(Color {
-            //                                               r: 0.0,
-            //                                               g: 0.0,
-            //                                               b: 0.0,
-            //                                               a: 0.75,
-            //                                           }),
-            //                                           &dep.view,
-            //                                           LoadOp::Clear(1.0));
-            //     renderer.render(&mut rp, gpu, &this.model[..]);
-            //     drop(rp);
-            //
-            //     let parent_window_loc = this.loc;
-            //     let my_loc = s.app.window.inner_position().unwrap();
-            //     // the left-top pos in the parent
-            //
-            //
-            //     // the offset from parent to my
-            //     let offset = (my_loc.x - parent_window_loc.x, my_loc.y - parent_window_loc.y);
-            //
-            //     let parent_has_width = (this.size.0 as i32 - offset.0).min(this.size.0 as _);
-            //     let parent_has_height = (this.size.1 as i32 - offset.1).min(this.size.1 as _);
-            //
-            //     // the copy src start point.
-            //     let img_start = (offset.0.max(0), offset.1.max(0));
-            //
-            //     let my_start = (offset.0.min(0).abs(), offset.1.min(0).abs());
-            //     let my_width = s.app.window.inner_size().width as i32 - my_start.0;
-            //     let my_height = s.app.window.inner_size().height as i32 - my_start.1;
-            //
-            //     let final_size = (parent_has_width.min(my_width), parent_has_height.min(my_height));
-            //
-            //     if final_size.0 <= 0 || final_size.1 <= 0 {
-            //         return Trans::None;
-            //     }
-            //
-            //
-            //     encoder.copy_texture_to_texture(ImageCopyTexture {
-            //         texture: &tex.texture,
-            //         mip_level: 0,
-            //         origin: Origin3d {
-            //             x: img_start.0 as _,
-            //             y: img_start.1 as _,
-            //             z: 0,
-            //         },
-            //         aspect: Default::default(),
-            //     }, ImageCopyTexture {
-            //         texture: &gpu.views.get_screen().texture,
-            //         mip_level: 0,
-            //         origin: Origin3d {
-            //             x: my_start.0 as _,
-            //             y: my_start.1 as _,
-            //             z: 0,
-            //         },
-            //         aspect: Default::default(),
-            //     }, Extent3d {
-            //         width: final_size.0 as _,
-            //         height: final_size.1 as _,
-            //         depth_or_array_layers: 1,
-            //     });
-            //     gpu.queue.submit(Some(encoder.finish()));
-            // }
+            if let Some(mut renderer) = s.app.world.try_fetch_mut::<General3DRenderer>() {
+                let renderer = &mut renderer.plane_renderer;
+                let gpu = s.app.gpu.as_ref().unwrap();
+
+                let tex = gpu.views.get_extra("main screen").expect("HOW");
+                let dep = gpu.views.get_extra("main screen depth").expect("HOW");
+                let mut encoder = gpu.device.create_command_encoder(&CommandEncoderDescriptor { label: Some("overlay encoder") });
+
+                {
+                    let rp = encoder.begin_with_depth(&tex.view,
+                                                      LoadOp::Clear(Color {
+                                                          r: 0.0,
+                                                          g: 0.0,
+                                                          b: 0.0,
+                                                          a: 0.75,
+                                                      }),
+                                                      &dep.view,
+                                                      LoadOp::Clear(1.0));
+                    if let Some(level) = self.state.level.as_ref() {
+                        level.render_portal(self.state.camera.clone(), rp, gpu, renderer, self.state.purple.as_ref().unwrap());
+                    }
+                }
+                // gpu.queue.submit(std::iter::once(encoder.finish()));
+
+                let parent_window_loc = this.loc;
+                let my_loc = s.app.window.inner_position().unwrap();
+                // the left-top pos in the parent
+
+
+                // the offset from parent to my
+                let offset = (my_loc.x - parent_window_loc.x, my_loc.y - parent_window_loc.y);
+
+                let parent_has_width = (this.size.0 as i32 - offset.0).min(this.size.0 as _);
+                let parent_has_height = (this.size.1 as i32 - offset.1).min(this.size.1 as _);
+
+                // the copy src start point.
+                let img_start = (offset.0.max(0), offset.1.max(0));
+
+                let my_start = (offset.0.min(0).abs(), offset.1.min(0).abs());
+                let my_width = s.app.window.inner_size().width as i32 - my_start.0;
+                let my_height = s.app.window.inner_size().height as i32 - my_start.1;
+
+                let final_size = (parent_has_width.min(my_width), parent_has_height.min(my_height));
+
+                if final_size.0 <= 0 || final_size.1 <= 0 {
+                    return Trans::None;
+                }
+
+
+                encoder.copy_texture_to_texture(ImageCopyTexture {
+                    texture: &tex.texture,
+                    mip_level: 0,
+                    origin: Origin3d {
+                        x: img_start.0 as _,
+                        y: img_start.1 as _,
+                        z: 0,
+                    },
+                    aspect: Default::default(),
+                }, ImageCopyTexture {
+                    texture: &gpu.views.get_screen().texture,
+                    mip_level: 0,
+                    origin: Origin3d {
+                        x: my_start.0 as _,
+                        y: my_start.1 as _,
+                        z: 0,
+                    },
+                    aspect: Default::default(),
+                }, Extent3d {
+                    width: final_size.0 as _,
+                    height: final_size.1 as _,
+                    depth_or_array_layers: 1,
+                });
+                gpu.queue.submit(Some(encoder.finish()));
+            }
         }
         Trans::None
     }

@@ -7,7 +7,7 @@ use nalgebra::{Matrix4, Point3, vector, Vector2, Vector3};
 use num::Zero;
 use rapier3d::pipeline::ActiveEvents;
 use rapier3d::prelude::{ColliderBuilder, ColliderHandle};
-use wgpu::{Color, CommandEncoder, LoadOp, Operations, RenderBundle, RenderPass, RenderPassDepthStencilAttachment, RenderPassDescriptor};
+use wgpu::{BindGroup, Color, CommandEncoder, LoadOp, Operations, RenderBundle, RenderPass, RenderPassDepthStencilAttachment, RenderPassDescriptor};
 use wgpu::util::StagingBelt;
 use winit::event::VirtualKeyCode;
 
@@ -429,6 +429,33 @@ impl MagicLevel {
                 pr.render_static(&mut rp, gpu, from_ref(&this_portal.portal_render));
             }
         }
+        gpu.uniforms.data.camera.update_view_proj(&camera);
+        gpu.uniforms.update_staging(&gpu.device, ce, &mut self.staging_belt);
         self.staging_belt.finish();
+    }
+
+    pub fn render_portal<'a: 'rp, 'rp, 'pr: 'rp>(&'a self, _camera: Camera,
+                                                 mut rp: RenderPass<'rp>,
+                                                 gpu: &WgpuData,
+                                                 pr: &'pr mut PlaneRenderer,
+                                                 purple_bind: &'rp BindGroup)
+    {
+        for world in 0..self.levels.len() {
+            for portal_idx in 0..self.levels[world].portals.len() {
+                let this_portal = &self.levels[world].portals[portal_idx];
+
+                // if !will_see_face(&gpu.uniforms.data.camera.view_proj, &this_portal.plane) {
+                //     continue;
+                // }
+                // if (this_portal.this.pos.z - camera.eye.z).abs() > 5.0 {
+                //     continue;
+                // }
+
+                pr.bind(&mut rp);
+                rp.set_bind_group(1, purple_bind, &[]);
+                rp.set_pipeline(&pr.no_cull_rp);
+                pr.render_static(&mut rp, gpu, from_ref(&this_portal.portal_render));
+            }
+        }
     }
 }
