@@ -42,7 +42,7 @@ impl Default for Test3DState {
             loc: Default::default(),
             level: None,
             pr: None,
-            purple: None
+            purple: None,
         }
     }
 }
@@ -66,7 +66,7 @@ impl Test3DState {
         let pr = PortalRenderer::new(gpu, plane_renderer);
         let pf = s.app.res.textures.get("pf").ok_or(anyhow!("NO TEXTURE")).unwrap();
 
-        self.level = Some(MagicLevel::level0(gpu, plane_renderer, &pr, s.app.res.as_ref()).unwrap());
+        self.level = Some(MagicLevel::level_rooms(gpu, 3, plane_renderer, &pr, s.app.res.as_ref()).unwrap());
         self.purple = Some(gpu.device.create_bind_group(&BindGroupDescriptor {
             label: None,
             layout: &plane_renderer.obj_layout,
@@ -129,7 +129,7 @@ impl GameState for Test3DState {
             let y = self.controller.mouse_initial_position.y * size.height as f32;
             let _ = s.app.window.set_cursor_position(PhysicalPosition::new(x, y));
         }
-        if s.app.inputs.is_pressed(&[VirtualKeyCode::Numpad6]) {
+        if s.app.inputs.is_pressed(&[VirtualKeyCode::Numpad6]) || s.app.inputs.is_pressed(&[VirtualKeyCode::Key6]) {
             let mut window = WindowInstance::new_with_gpu("See portal?",
                                                           |x| x.with_transparent(true)
                                                               .with_window_level(WindowLevel::AlwaysOnTop),
@@ -158,7 +158,7 @@ impl GameState for Test3DState {
         gpu.uniforms.data.camera.update_view_proj(&self.camera);
         gpu.uniforms.update(&gpu.queue);
 
-        if let  Some(mut g3d)= s.app.world.try_fetch_mut::<General3DRenderer>() {
+        if let Some(mut g3d) = s.app.world.try_fetch_mut::<General3DRenderer>() {
             if let Some(apr) = self.pr.as_mut() {
                 if let Some(level) = self.level.as_mut() {
                     egui::CentralPanel::default()
