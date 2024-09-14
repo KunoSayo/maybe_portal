@@ -135,7 +135,7 @@ impl WgpuData {
                 format,
                 width: size.width,
                 height: size.height,
-                present_mode: PresentMode::Fifo,
+                present_mode: PresentMode::AutoVsync,
                 alpha_mode: Default::default(),
                 view_formats: vec![format],
             };

@@ -3,6 +3,7 @@ use anyhow::anyhow;
 
 use egui::{Context, Frame};
 use nalgebra::{point, vector};
+use num::Zero;
 use rand::{Rng, thread_rng};
 use wgpu::{BindGroup, BindGroupDescriptor, BindGroupEntry, BindingResource, Color, CommandEncoderDescriptor, Extent3d, ImageCopyTexture, LoadOp, Origin3d, TextureFormat};
 use winit::dpi::PhysicalPosition;
@@ -116,7 +117,11 @@ impl GameState for Test3DState {
                 }
             }
         }
-        let dt = self.last_update.map(|x| now.duration_since(x)).unwrap_or(Duration::from_millis(1)).as_secs_f32().min(0.05);
+        let old_camera = (self.camera.eye, self.camera.target);
+        let dt = self.last_update.map(|x| now.duration_since(x))
+            .map(|x| x.as_secs_f32())
+            .map(|x| if x > 0.05 { 0.0 } else { x })
+            .unwrap_or(0.016666666666);
         let ddr = self.controller.update_direction(&mut self.camera);
         if let Some(level) = self.level.as_mut() {
             level.update(s, dt, &mut self.camera, &ddr);
@@ -129,6 +134,8 @@ impl GameState for Test3DState {
             let y = self.controller.mouse_initial_position.y * size.height as f32;
             let _ = s.app.window.set_cursor_position(PhysicalPosition::new(x, y));
         }
+        let current_camera = (self.camera.eye, self.camera.target);
+
         if s.app.inputs.is_pressed(&[VirtualKeyCode::Numpad6]) || s.app.inputs.is_pressed(&[VirtualKeyCode::Key6]) {
             let mut window = WindowInstance::new_with_gpu("See portal?",
                                                           |x| x.with_transparent(true)
@@ -145,7 +152,13 @@ impl GameState for Test3DState {
             window.states.last_mut().unwrap().start(&mut sd);
             s.wd.new_windows.push(window);
         }
-        (Trans::None, LoopState::POLL)
+
+        let state = if current_camera == old_camera && ddr.is_zero() {
+            LoopState::WAIT_ALL
+        } else {
+            LoopState::POLL
+        };
+        (Trans::None, state)
     }
 
     fn render(&mut self, s: &mut StateData, ctx: &Context) -> Trans {
